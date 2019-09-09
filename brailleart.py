@@ -82,4 +82,4 @@ if (len (argv) == 3 or len (argv) == 4) and isfile (argv[1]) and works (lambda: 
     else:
         print (out)
 else:
-    print ("usage: {} [image] [width] [height] [optional outfile]".format (argv[0]))
+    print ("usage: {} [image] [scale] [optional outfile]".format (argv[0]))
