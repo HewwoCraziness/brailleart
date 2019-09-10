@@ -1,0 +1,6 @@
+*.spec
+*.jpg
+*.png
+build
+__pycache__
+.DS_Store
