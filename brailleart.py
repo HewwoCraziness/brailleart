@@ -37,12 +37,10 @@ def constant_width_float (infloat):
 
 from PIL import Image
 
-from sys import argv
-from os.path import isfile
-
 PERCENT_DISPLAY_DIGITS = 2
 
-if (len (argv) == 3 or len (argv) == 4) and isfile (argv[1]) and works (lambda: float (argv[2])):
+def imagetobraille (argv):
+    # filename (path), scale (float), outfile (path, optional)
     print ("Opening {}...".format (argv[1]))
     img = Image.open (argv[1])
     fixedwidth = round (img.width * float (argv[2]) * 2) # should be twice as wide since chunks are 2 wide x 4 tall
@@ -80,6 +78,111 @@ if (len (argv) == 3 or len (argv) == 4) and isfile (argv[1]) and works (lambda: 
             outfile.write (out)
         print ("Saved to {}".format (argv[3]))
     else:
-        print (out)
+        return out
+
+from sys import argv
+realargv = argv
+from os import sep
+from os.path import isfile
+from tkinter import Tk, Label, Frame, Button, Entry, Text, StringVar, Toplevel, BOTH, END, NONE
+from tkinter.filedialog import askopenfilename, asksaveasfilename
+
+class FileChooser (Frame):
+    def __init__ (self, root, onchoose = lambda: None, save = False):
+        self.root = root
+        self.onchoose = onchoose
+        self.save = save
+        super (FileChooser, self).__init__ (self.root)
+        self.choosebutton = Button (self, text = "Choose File", command = self.choosehandler)
+        self.choosebutton.grid (row = 0, column = 0)
+        self.choosetextvar = StringVar ()
+        self.choosetextvar.set ("No file chosen")
+        self.choosetext = Label (self, textvariable = self.choosetextvar)
+        self.choosetext.grid (row = 0, column = 1)
+        self.filename = None
+    def choosehandler (self):
+        if self.save:
+            filename = asksaveasfilename ()
+        else:
+            filename = askopenfilename ()
+        if filename != "":
+            print (filename)
+            self.filename = filename
+            self.choosetextvar.set (filename.split (sep) [-1])
+        else:
+            self.filename = None
+        self.onchoose ()
+
+class TextViewer (Toplevel):
+    def __init__ (self, root, text = "The text keyword argument was not set!"):
+        self.root = root
+        super (TextViewer, self).__init__ ()
+        self.closebutton = Button (self, text = "Close", command = self.close)
+        self.closebutton.pack ()
+        self.outputtext = Text (self, wrap = NONE)
+        self.outputtext.tag_config ("styled", foreground = "#00FF00", background = "#000000")
+        self.outputtext.insert (END, text, ("styled"))
+        self.outputtext.pack (expand = True, fill = BOTH, padx = (0, 0), pady = (0, 0))
+    def close (self):
+        self.withdraw ()
+        self.root.deiconify ()
+
+class brailleart (Tk):
+    global realargv
+    def __init__ (self):
+        super (brailleart, self).__init__ ()
+        self.titleframe = Frame (self)
+        self.titleframe.pack ()
+        self.titlelabel = Label (self.titleframe, text = "brailleart v0.2, by HewwoCraziness (github.com/HewwoCraziness)")
+        self.titlelabel.pack ()
+        self.inputchooserframe = Frame (self)
+        self.inputchooserframe.pack ()
+        self.inputchooserlabel = Label (self.inputchooserframe, text = "Input: ")
+        self.inputchooserlabel.grid (row = 0, column = 0)
+        self.inputchooser = FileChooser (self.inputchooserframe, save = False)
+        self.inputchooser.grid (row = 0, column = 1)
+        self.scaleframe = Frame (self)
+        self.scaleframe.pack ()
+        self.scalelabel = Label (self.scaleframe, text = "Scale: ")
+        self.scalelabel.grid (row = 0, column = 0)
+        self.scaletextvar = StringVar ()
+        self.scaleentry = Entry (self.scaleframe, textvariable = self.scaletextvar)
+        self.scaleentry.grid (row = 0, column = 1)
+        self.scaleafterlabel = Label (self.scaleframe, text = "x")
+        self.scaleafterlabel.grid (row = 0, column = 2)
+        self.outputchooserframe = Frame (self)
+        self.outputchooserframe.pack ()
+        self.outputchooserlabel = Label (self.outputchooserframe, text = "Output (optional): ")
+        self.outputchooserlabel.grid (row = 0, column = 0)
+        self.outputchooser = FileChooser (self.outputchooserframe, save = True)
+        self.outputchooser.grid (row = 0, column = 1)
+        self.runframe = Frame (self)
+        self.runframe.pack ()
+        self.runbutton = Button (self.runframe, text = "Run", command = self.runhandler)
+        self.runbutton.pack ()
+        self.textviewer = None
+    def runhandler (self):
+        argv = [realargv[0], self.inputchooser.filename, self.scaletextvar.get ()]
+        if self.outputchooser.filename != None:
+            argv.append (self.outputchooser.filename)
+        out = imagetobraille (argv)
+        if out != None:
+            print ("self.textviewer is {}".format (self.textviewer))
+            if self.textviewer != None:
+                print ("kaboom")
+                self.textviewer.destroy ()
+                self.textviewer = None
+            self.textviewer = TextViewer (self, out)
+            self.withdraw ()
+
+def verifyargv (argv):
+    return (len (argv) == 3 or len (argv) == 4) and isfile (argv[1]) and works (lambda: float (argv[2]))
+
+if len (argv) > 1:
+    if verifyargv (argv):
+        imagetobraille (argv)
+    else:
+        print ("usage: {} [image] [scale] [optional outfile]".format (argv[0]))
 else:
-    print ("usage: {} [image] [scale] [optional outfile]".format (argv[0]))
+    brailleart_instance = brailleart ()
+    brailleart_instance.mainloop ()

@@ -11,6 +11,13 @@ PIL/Pillow: `pip install pillow`
 
 
 ## Syntax
+### GUI mode (new in v0.2)
+Open the binary or run the source code with `python brailleart.py`.
+You should be able to choose the options listed below.
+If an output file is not chosen,
+the braille art should be shown in a closeable, copyable popup.
+
+### Command-line mode
 `python brailleart.py [image] [scale] [optional outfile]`
 
 image: The filename of the target image.
